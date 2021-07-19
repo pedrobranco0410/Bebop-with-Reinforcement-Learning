@@ -172,6 +172,8 @@ To get this data in the terminal you must source it (`source ~/bebop_ws/devel/se
 
 first source it: `source ~/bebop_ws/devel/setup.bash`
 
-then call rostopic echo: `rostopic echo /bebop2/states/common/CommonState/BatteryStateChanged`
+then call rostopic echo: `rostopic echo /bebop2/states/common/CommonState/BaeryStateChanged > ~/Desktop/Bebop-git2/Bebop-with-Reinforcement-Learning/src/status/outputfile.txt`
+
+**Observation**: change to the directory where you want to save the outputfile 
 
 The topics for each parameters are specified in the links.
