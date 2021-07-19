@@ -33,6 +33,7 @@ class RobotEnv(gym.Env):
         self.real_position = (0, 0, 0, 0) #Reset real position
         self.action_space = spaces.Discrete(robot.NUMBER_MOVEMENTS)
         self.set_up_parameters_training()
+        self.done = 0
 
         if os.path.exists(OBSERVATION_FILE):
             self.old_file = os.stat(OBSERVATION_FILE).st_mtime
@@ -57,27 +58,14 @@ class RobotEnv(gym.Env):
         -   True  --> if the face is in place
         -   False --> otherwise
         """
-        if in_range(x, self.IMAGE_SIZE[0]/2, self.ERROR):
+
+        x = x + w/2
+        y = y + h/2 
+
+        #if in_range(x, self.IMAGE_SIZE[0]/2, self.ERROR): # 2 actions
+        if (in_range(x, self.IMAGE_SIZE[0]/2, self.ERROR) and in_range(y, self.IMAGE_SIZE[1]/2, self.ERROR) and in_range(h, 2*self.IMAGE_SIZE[1]/3, 20)): # 4 actions
             return True
         return False
-    
-    def get_state(self):
-        self.update_state_image() # Process image
-        object_locations = self.define_state() # Define state
-        done = 0
-
-        if (len(object_locations) > 0):
-            x, y, w, h = object_locations[0]
-            self.state = [x] 
-            self.real_position = (x, y, w, h)
-            if self.object_in_place(x, y, w, h):
-                done = 1
-        else
-            self.state = [-1] 
-            self.real_position = (0, 0, 0, 0)
-        
-        return [self.state], done
-
 
 
 
@@ -92,32 +80,35 @@ class RobotEnv(gym.Env):
             List: a list containing the new state, the reward obtained from the step
             and if it finish doing the task
         """
-        reward = 0 # Reward of the state
-        done = 0 # Boolean that indicates that an episode has finished
 
+        self.done = 0
+        reward = 0
+        
         self.robot.move_robot(action) # Execute Move
         self.update_state_image() # Process image
         object_locations = self.define_state() # Define state
 
         if (len(object_locations) > 0):
             x, y, w, h = object_locations[0]
-            self.state = [x] #pos_to_state(x, y)
+
+            self.state = [x + w/2, y + h/2, h] 
             self.real_position = (x, y, w, h)
-            #--------The code below will change------
-            if self.object_in_place(x, y, w, h):# and self.state <= self.NB_STATES:
-                reward = 100 / time
-                done = 1
+
+            if self.object_in_place(x, y, w, h):
+                reward = 200 / time
+                self.done = 1
 
             else:
-                reward = (2 - (2*abs(x - self.IMAGE_SIZE[0]/2)/self.IMAGE_SIZE[0]))/time
-            #----------------------------------------
-        else:
-            self.state = [-1] #pos_to_state(0, 0) #Reset state
-            self.real_position = (0, 0, 0, 0)
-            done = 0
-            reward = -0.5
+                #reward = (2 - (2*abs(x - self.IMAGE_SIZE[0]/2)/self.IMAGE_SIZE[0]))/time # 2 actions
+                reward = (3 - (2*abs(x - self.IMAGE_SIZE[0]/2)/self.IMAGE_SIZE[0]) - (2*abs(y - self.IMAGE_SIZE[1]/2)/self.IMAGE_SIZE[1]) - (3*abs(h - 2*self.IMAGE_SIZE[1]/3)/(2*self.IMAGE_SIZE[1])))/time # 4 actions
 
-        return [self.state], reward, done
+        else:
+            self.state = [-1, -1, -1] 
+            self.real_position = (0, 0, 0, 0)
+            self.done = 0
+            reward = -1
+
+        return [self.state], reward, self.done
 
     def reset(self):
         """Reset the simulation putting the object to
@@ -136,7 +127,7 @@ class RobotEnv(gym.Env):
         object_locations = self.define_state() # Define state
 
         for i in range(4):
-            self.robot.move_robot(1 + random.randint(0,1)) # Execute Move
+            self.robot.move_robot(1 + random.randint(0,3)) # Execute Move
             self.update_state_image() # Process image
             object_locations = self.define_state() # Define state
 
@@ -147,7 +138,7 @@ class RobotEnv(gym.Env):
 
 
         x, y, w, h = object_locations[0]
-        self.state = [x]
+        self.state = [x + w/2, y + h/2, h] 
 
         return [self.state]
 
@@ -164,13 +155,12 @@ class RobotEnv(gym.Env):
 
         image = cv2.imread(OBSERVATION_FILE)
         window_name = 'image'
-       # x, y = state_to_pos(self.state)
-        w = self.SQUARE_SIZE_X
-        h = self.SQUARE_SIZE_Y
 
-        #cv2.rectangle(image, (x, y), (x+w, y+h), (25, 125, 225), 5)
         xreal, yreal, wreal, hreal = self.real_position
-        cv2.rectangle(image, (xreal, yreal), (xreal+wreal, yreal+hreal), (255, 0, 0), 5)
+        if self.done:
+            cv2.rectangle(image, (xreal, yreal), (xreal+wreal, yreal+hreal), (0, 255, 0), 5)
+        else:  
+            cv2.rectangle(image, (xreal, yreal), (xreal+wreal, yreal+hreal), (255, 0, 0), 5)
 
         cv2.imshow(window_name, image)
         value = 5
