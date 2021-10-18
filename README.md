@@ -179,5 +179,6 @@ then call rostopic echo: `rostopic echo /bebop2/states/common/CommonState/BaeryS
 The topics for each parameters are specified in the links.
 
 ## Authors
-Pedro BRANCO
-Gabriel SOBREIRA
+Pedro BRANCO - Engineering student at ENSTA Paris
+
+Gabriel SOBREIRA - Engineering student at ENSTA Paris
