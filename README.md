@@ -177,3 +177,7 @@ then call rostopic echo: `rostopic echo /bebop2/states/common/CommonState/BaeryS
 **Observation**: change to the directory where you want to save the outputfile 
 
 The topics for each parameters are specified in the links.
+
+## Authors
+Pedro BRANCO
+Gabriel SOBREIRA
